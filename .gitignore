@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+ENV/
+
+# Data
+data/raw/*
+data/processed/*
+data/splits/*
+!data/raw/.gitkeep
+!data/processed/.gitkeep
+!data/splits/.gitkeep
+!data/README.md
+
+# Models
+models/cnn/*
+models/temporal/*
+models/checkpoints/*
+!models/cnn/.gitkeep
+!models/temporal/.gitkeep
+!models/checkpoints/.gitkeep
+
+# Results
+results/metrics/*
+results/plots/*
+results/predictions/*
+results/logs/*
+!results/metrics/.gitkeep
+!results/plots/.gitkeep
+!results/predictions/.gitkeep
+!results/logs/.gitkeep
+
+# Jupyter
+.ipynb_checkpoints
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Streamlit
+.streamlit/
+
+# Env
+.env
+.env.local

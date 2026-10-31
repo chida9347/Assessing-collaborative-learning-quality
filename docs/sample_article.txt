@@ -1,0 +1,622 @@
+TEMPO: Privacy-Preserving Classroom Temporal Behaviour Analytics and Administrative Intelligence
+Authors: L. Aruna, K. Hemalatha, M. Harsha Priya, D. Lepakshi Reddy, K. Shivananda Reddy ,Guide:R. Raja Subramanian*
+Department of Computer Science and Engineering, Kalasalingam Academy of Research and Education, Tamil Nadu, India arunalavanuru1@gmail.com *rajasubramanian.r@klu.ac.in *0000-0002-9065-5056
+Abstract Classroom settings are highly dynamic ones in which teaching, individual work, reading, writing, peer interaction and changing visual activity occur simultaneously. Although these processes are vital for understanding classroom environment dynamics, they are not easy to capture via periodic manual observations. However, classroom monitoring technologies face technical and ethical complications, especially when predictions are treated as concrete facts about attention levels, learning or effectiveness of the teaching process. This paper describes TEMPO (Temporal Engagement and Motion Profiling), a prototype that combines classroom video processing with timetable-driven administrative intelligence. The system consists of a combination of person detection, session-level tracking, visual feature extraction, temporal behaviour classification, annotated video generation and an administrative interface for linking classroom sessions to structured timetable data. Video processing is based on YOLO-based person detector, ResNet-18 visual feature extractor and a temporal classification module. Five possible observable behaviour classes are considered: Looking_Toward_Instruction, Reading, Writing, Peer_Interaction and Looking_Away. Administrative component works by parsing PDF layout and bounding boxes to extract faculty members, sections, subjects, rooms and schedule slots from a multi-page aSc timetable. In the terms of the reported project evaluation, a better-performing 1280 pixel detection configuration had precision of 0.8370, recall of 0.8575 and F1-score of 0.8472 on 743-frame held-out CDED-7 split. Tracking coverage is said to be 96.39% while temporal-ready coverage is 87.62%. A separate ablation experiment reported a test macro-F1 of 0.5027 for ResNet-18 + GRU behaviour model although classlevel weaknesses are very significant. In the terms of timetable ingestion report, there were 64 expected and 64 ingested faculty members but a different interface view reportedly showed 66. Thus, discrepancy prevents making any claims about the completeness of faculty members extraction. The paper therefore contrasts reported prototype metrics with unfounded claims and treats faculty member indicators as exploratory measures not as ones validating teaching effectiveness. The study develops an integrated system concept and a framework for testing classroom analytics applications with stress on the need for reproducibility, human control and data governance procedures. Keywords: classroom video analytics; temporal behaviour recognition; deep learning; person detection; multi-object tracking; privacy-by-design; timetable parsing; pedagogical analytics; administrative intelligence Introduction 1. Introduction
+1.1 Background and Research Problem
+A classroom is a dynamic environment in which teaching and learning activities evolve over time. During a typical lecture, an instructor may explain concepts, write on the board, move between rows, answer individual questions, or guide practical activities. Similarly, students may listen, read, write notes, interact with peers, or consult learning materials. These activities occur simultaneously, and their interpretation depends on the instructional context. Consequently, a single image or occasional observation provides only a limited view of classroom activity.
+Manual classroom observation can provide valuable contextual information, but conducting it
+1
+
+frequently across multiple classes requires considerable time and trained personnel. Computer vision and deep learning offer an alternative for organizing observable classroom information from video recordings. Such systems can detect people, associate detections across frames, extract visual features, and estimate activity categories over successive time intervals. Temporal summaries can then support the examination of classroom activity patterns.
+Detection and tracking are impacted by the given conditions especially in students seated in extreme rows of the classroom. In addition, behavioral classification is based on temporal context because postures that look similar can represent different activities, for example, reading, writing or looking at the device. As a result, the quality of detection, the construction of temporal sequence, the mixture of training data and coherence of activity. Scenes in classrooms involve the presence of many people, partial obstructions, changing lighting conditions, and significant variations in the apparent size of people. All these factors can influence the process of detecting and tracking objects; the difficulties grow greater when it comes to students that are situated far from the camera. Additionally, classification of behaviours needs temporal context, as similar postures may correspond to various activities (for example, reading, writing, and using a device) depending on the time of observation. The final predictions are influenced by the quality of detection, construction of the temporal sequence, distribution of training data, and the consistency of activity labels.
+The system of the practical classroom analytics has to link video based observations with the institutional data. Timetables show the information about scheduled teachers, subjects, segments of learning, rooms and time periods. Unfortunately, academic timetables are often complicated and cannot be converted into structured data for effective processing. The issue of timetable parsing is important since even if the video-stream in the classroom works correctly, the mistakes in the timetable parsing process can create a lot of problems because associations can be incorrect. Moreover, the issue of privacy and responsible treatment of video data is also critical.
+An effective system for classroom analytics must establish a link between video assessments and institutional statistics. Academic schedules include staff assignments, groups, subjects, classrooms, and course times, but they may have a complex PDF format instead of being available as structured database entries. Thus, it is vital to extract and validate this information for recording it correctly in the class context. Timetable parsing mistakes could lead to inappropriate linkages even if the video analysis pipeline works effectively.
+Issues of privacy and responsible interpretation also should be acknowledged. The classroom video, human trajectories, photo snippets, visual embeddings, or activity history elements may carry sensitive information even without naming people. Therefore, privacy issues must be taken into account during processing, storing, accessing, keeping, and reporting data. Automated predictions, on their part, cannot be regarded as definite judgments about the students' abilities, involvement, or teachers' proficiency.
+To overcome the aforementioned issues, this paper proposes TEMPO, a combined prototype of classroom video analysis and timetable-based administrative context. The video processing of TEMPO includes person detection, session-level tracking, feature extraction via ResNet-18, and temporal behavior classification. The administrative processing allows transforming the timetable information into a structured form for creating records that will be used for classes associations and exploratory reporting. The system is aimed to systematize observable behaviors for further analysis, not to substitute professional educational judgment. 1.2 Objectives and Contributions
+The work of TEMPO seeks to process classroom videos and timetable data together. The paper consists of providing a method for detecting people, tracking them in the classroom, extracting visual features, and classifying them into five classes based upon their behaviours. They test the detection and tracking modules independently of the classification module to compare different system components. The administration workflow breaks down timetable PDFs into structured information about faculty, section, subject, room, and time and allows matching of video recordings with classes.
+This paper focuses on methods of displaying the gathered information in the form of recorded videos, dashboards, and summary reports about activities and movements of instructors. It provides metrics for detection and tracking activities and outputs results for behaviour classification
+2
+
+indicating performance per class and throughout the system. The main novelty of the work is that it employs processed videos alongside classroom timetables. Other contributions include the running of numerous experiments, obtaining detection and classification results in two different workflow modules, and establishing requirements for future replications of the analysis.
+The contributions outlined here are for prototype testing and testing phase. They did not imply that TEMPO has succeeded in improving educational outcomes, maintaining anonymity, or satisfying all legal and accreditation obligations. Literature produced is intended to be utilized in analyses and discussions.
+The rest of the paper is organized as follows. Section 2 reviews the literature in classroom sensing, recognizing behaviour, using temporal modelling and learning analytics. In Section 3, the architecture of the system is discussed, and Section 4 deals with methodology, datasets, metrics, and processing of timetable data. Section 5 presents experimental results, while implications from these results will be reviewed in Section 6. Section 7 discusses ethical issues, Section 8 provides limitations and outlines future work, while Section 9 is the conclusion of the paper.
+2.Related Work
+2.1Classroom Sensing and Computer Vision The study of classroom sensing analyzes how technology aids researchers with understanding the unfolding situation in classroom settings. Potentially, such systems can utilize cameras, microphones, wearable devices, environmental sensors, or various combinations of various types of sensors, to gather information about the classroom activities. Video-based methods are particularly effective when it comes to the online analysis of the activities in the classroom since the camera allows observing many people simultaneously without demanding them to have special gear on them. For instance, EduSense studies large-scale practical sensing technology used in classrooms and reveals the possibilities classroom analytics offer in managing information related to classroom activities [Patidar et al. (2024)]. What is worth noting in terms of research conducted in this area is that implementing sensing technologies in classrooms is not about obtaining high accuracy of the model every time. In particular, camera placement, room configuration, light conditions, occlusion, processing costs, and restrictions connected with privacy need to be considered when deciding if a system works in practice. It is also essential to point out that the line between technological observation and educational interpretation is important. For instance, the vision system can know where a person is staring at or whether a person is moving; however, those estimates should not be automatically interpreted as related to the level of attention or comprehension. The actions conducted in classrooms are influenced by the task, the characteristics of learners, mobility accessibility and instructional context. 2.2 Deep Learning for Human Activity Recognition Deep learning has allowed models to extract representations directly from images without using crafted features. CNN is capable of detecting patterns in postures, interaction with objects, and appearance. As for temporal models, these can obtain a stream of representations in order to estimate how the visibility of activities changes over time. RNN uses the sequence approach with the maintenance of state in memory based on previous observations. LSTM and GRU introduce gates to enhance the modeling of time-related dependencies. Bi-directional models also process information in both directions thus helping in cases where the full data is available prior. Besides, attention mechanisms can provide different weights to different parts of sequences. TEMPO utilizes a ResNet-18 backbone with the temporal classification stage for the work. The study compares RNN, GRU, BiGRU, attention methods, and ResNet-50 configuration. Finally, it comes to the conclusion that architectural comparison should be based on several metrics. 2.3 Tracking and Temporal Continuity Person detection identifies candidate people in individual frames, while tracking associates detections across frames in such a way that a person may be visually interpreted as a trajectory through a recording. These tasks are related but not interchangeable. A detector may provide good boxes while a tracker loses continuity during occlusion; a tracker cannot recover reliably a person
+3
+
+repeatedly missed by the detector. This delineation is what temporal classroom analytics relies upon. If a trajectory is broken, that action sequence will be shorter than anticipated or have gaps. Duplicate detections may represent a single visible individual by multiple candidates. This cluster of errors can cause downstream activity predictions and apparent distribution of conduct to be affected. This is why TEMPO reports detection precision, recall, and F1 apart from tracking coverage and temporal-ready coverage: they describe different properties of the pipeline and are not to be combined for a single overall system accuracy claim. 2.4 Privacy and Responsible Educational Analytics Using artificial intelligence technology in classrooms prompts discussions not only about surveillance, permission, fairness, and the degree of trust placed in the output generated by algorithms. Researching education technologies shows that it is inappropriate to deduce complicated mental conditions from weak visual signals or to see automated predictions as an objective truth [Han et al. (2025), Li and Chen (2026)]. The privacy-by-design approach can help mitigate some risks by avoiding the use of biometric identification, restricting access, making use of session identifiers, and aggregating results. However, it is worth mentioning that merely omitting a name or facial recognition technology will not ensure the anonymity of data. Video, body looks, routes and timestamps constitute enough information to identify a person. For this reason, TEMPO utilizes the observable-state approach. Its categories reflect visible behavioral patterns instead of the mental status of a person. Its administrative reports are meant for performing reflective analysis rather than for adding students or instructors to the list of the top people. 2.5 Comparison with Related Approaches The taxonomy provided takes advantage of the structure of the comparative table found in the above reference paper. PRINCIPLED APPROACHES of the following table refer to the criterion relevant for TEMPO as opposed to ranking methods tested on different datasets (table 1). Several methods have been developed to analyse classroom videos and understand student activities. Hand-crafted motion features, such as HOG and HOF, use visual information from video frames without requiring deep learning. CNN-based image classifiers use deep learning to classify activities in individual images, but they cannot study changes in behaviour over time on their own. RNN and LSTM models can analyse sequences of video frames and identify changes in activities over time. YOLO-based detectors are used to identify people in video frames. However, detecting people alone does not show how their activities change over time.
+Table 1: Descriptive comparison of related methodologies. As the datasets, tasks, and methodologies in the current study vary, the provided table is descriptive rather than a simple quantitative ranking.
+4
+
+Approach or System
+
+Input
+
+Deep Learning Temporal or Tracking T imetable T typical
+
+Capability
+
+Integration Evaluation
+
+Hand-crafted Video
+
+motion features, frames
+
+such as
+
+HOG/HOF
+
+CNN image
+
+Video
+
+classifier
+
+frames or
+
+images
+
+RNN/LSTM
+
+Frame
+
+temporal model sequences
+
+Not required Yes Usually
+
+Depends on the feature No pipeline
+
+Not by itself
+
+No
+
+Sequence modelling No
+
+YOLOfamily Video
+
+Yes
+
+detector
+
+frames
+
+Detection only
+
+No
+
+Multiobject
+
+Video Often combined Track continuity
+
+No
+
+tracking
+
+detections with deep models
+
+Edge/fog vision Video or Varies
+
+framework
+
+sensor data
+
+Depends on architecture
+
+Optional
+
+Feature or classification metrics
+Accuracy, precision, recall, F1 Sequence accuracy and F1 Detection precision, recall, F1 Coverage and tracking error metrics Latency, runtime, jitter
+
+EduSense [Patidar et al.(2024)] ClassID [Sheng et al.(2025)] Tempo Has a constant prototype
+
+Classroom Depends on the Classroom-scope
+
+sensing system
+
+sensing
+
+Not its main At the system orientation level
+
+Classroom Yes video
+Classroom ResNetvideo 18+RNN/GRU
+session-based
+
+I Identity/tracking-based
+Hit-based tracking and window detection
+
+Not its At task-
+
+main
+
+specific level
+
+orientation
+
+Yes
+
+most accurate
+
+detection as
+
+well as
+
+coverage
+
+measures
+
+In TEMPO's case, what sets it apart is not simply that any one model is new but that its prototype implements a video analysis workflow together with the timetable data. As a consequence of this innovation, certain engineering requirements that must be satisfied arise; these include accurately mapping of entities, safe data storage and access, and timely interpretation of indicators.
+3.TEMPO System Architecture
+3.1 Architectural Overview TEMPO comprises of a video-analysis sector and an administrative sector that perform different operations in a classroom session. The video sector obtains a recording of the classroom and conducts its processing starting with detecting persons, tracking them down, analyzing the visuals, and categorizing the time. The result of this processing makes it possible to compile the annotated video and summary of the class session. The administrative sector processes the timetable PDF, extracts academically meaningful entities from the document, and stores them into the relational database. Once the recording is
+5
+
+connected with specific section, subject, room, and time of the class, the administrative interface can show the video-analysis results in the context of the institution. The importance of this integration stems from the fact that technically accurate prediction can be misleading in its operational meaning due to the association with incorrect class or timetable entry, thus making the treatment of timetable parsing and relational mapping an integral data-quality issue rather than merely an administrative simplicity. 3.2 Video-Analysis Workflow The initial stage of the video workflow consists of recording the classroom. It involves a person detection algorithm utilizing bounding boxes for visible individuals, which can be further processed in the tracking stage to obtain their continuity. Once the detected regions are obtained, they can be fed through a ResNet-18 backbone to generate visual feature information. The obtained data is organized as temporal sequences to be injected into the behaviour identification model.
+Figure 1: TEMPO end-to-end video pipeline.
+The classifier is required to classify the behaviours into five main types: Looking_Toward_Instruction, Reading, Writing, Peer_Interaction, and Looking_Away and provide confidence for each prediction along with its corresponding period of time. Finally, the predictions are formatted for further storage and visualization (Figure 1).
+The pipeline has a modular design that allows for the individual assessment of its elements. The quality of detection can use annotated bounding boxes as the final evaluation metric while temporal classification uses labelled sequences and evaluation per class. This provides more clarity on an error in detection, tracking, feature extraction, or temporal modeling. 3.3 Administrative Intelligence Workflow
+The administrative section uses an aSc timetable PDF that comprises multiple pages. The software does not consider each page as an independent image; instead, it utilizes the layout and bounding box information of the PDF file to mark parts and derive facts related to the educational program. These facts are then processed for normalization and storing as relational data to allow querying of facts about professors, sections, subjects, lecture halls, and time intervals by the administrative user interface (shown in Figure 2).
+6
+
+Figure 2: Timetable ingestion and administrative analytics.
+It should be noted that the process of creating a timetable should not be deemed finished just because the quantity of extracted facts meets the required one. In fact, different names may refer to the same instructor, one name may appear in several sections, and one cell may contain more than one fact. Thus, the evaluation should assess entity identification, duplicates, missing data, aliases, and consistency. 3.4 Data Storage and Administrative Access
+In this document, the backend system has been outlined taking into consideration the access role for both the faculty and admin users. The timetable upload workflow is responsible for either creating or updating structured records, while the timetable overview function supplies information based on the parsed schedule. Other administrative functions connect chosen class recordings with courses and sections and offer analytics for investigation. It is noteworthy that even though the system incorporates access control based on permissions, it should not be treated either as a full guarantee of privacy or as the only security measure in the system. Access rights of the users should be verified in correlation with current endpoints and data objects. Moreover, in the system, it is essential to have policies determining which users are permitted to see raw videos, videos with annotations, particular track histories, aggregated summaries, and indicators related to the faculty. In the given study, it is crucial to distinguish written endpoints from suggested features. A feature can be considered operating when it has been tested and its results can be reproduced.
+4.Methodology
+4.1 Video-Processing Pipeline In this document, the backend system has been outlined taking into consideration the access role
+for both the faculty and admin users. The timetable upload workflow is responsible for either creating or updating structured records, while the timetable overview function supplies information based on the parsed schedule. Other administrative functions connect chosen class recordings with courses and sections and offer analytics for investigation.
+It is noteworthy that even though the system incorporates access control based on permissions, it should not be treated either as a full guarantee of privacy or as the only security measure in the system. Access rights of the users should be verified in correlation with current endpoints and data objects. Moreover, in the system, it is essential to have policies determining which users are permitted to see raw videos, videos with annotations, particular track histories, aggregated summaries, and indicators related to the faculty.
+In the given study, it is crucial to distinguish written endpoints from suggested features. A feature can be considered operating when it has been tested and its results can be reproduced.. The production checkpoint discussed in the project notes employs ResNet-18 along with an RNN temporal model. Alternatives under experiment include GRU, BiGRU, and attention-based models. It is essential to draw a clear at-tribution between these models in the final report since the performance of an experimental model cannot be transferred to the production checkpoint.
+7
+
+4.2 Dataset Description
+The post mentions CDED-7 being used as an external method to evaluate person detection and tracking [CDED-7(2026)]. The dataset in question has been released in v1.1.0-dataset and includes a collection of 2,843 annotated frames from seven classroom events. The project document highlights that for training classes 1, 2, and 3 will be used while validation classes consist of class 4 and class 6. Moreover, classes 5 and 7 will be used
+
+Partition
+Training
+Validation Held-out test
+Total
+
+Listed Sessions/Classes class_1, class_2,
+class_3 class_4, class_6 class_5, class_7 Seven sessions
+
+Number of Frames
+1,433
+667 743 2,843
+
+Intended Use
+Model fitting
+Model selection Final evaluation Dataset manifest total
+
+Table 2: CDED-7 split as reported in the project materials.
+
+(a)
+
+(b)
+
+Figure 3: Classroom environment used for TEMPO video analysis: (a) classroom seating and student activity; (b) classroom recording environment
+
+4.3 Detection Evaluation Person detection is evaluated by comparing predicted bounding boxes with reference annotations. A prediction is considered a true positive when it satisfies the selected matching criteria; unmatched predictions count as false positives, while missed reference objects count as false negatives. The precise matching rule, such as an intersection-over-union threshold, must be stated to make the results reproducible. The intersection over union (IoU) is given by
+
+(1)
+
+The project additionally evaluates back-row and small-person subsets. For each subset, the same metrics should be calculated using a documented rule for assigning reference objects to that subset. For example, small-person evaluation may be based on annotated bounding-box area, but the exact area threshold must come from the implemented evaluation protocol rather than being selected retrospectively to support a result.
+
+8
+
+(2)
+(3) Precision is defined as the number of correctly located detections to the number of all detected objects. Recall is defined as the number of correctly located reference objects to the number of reference objects. The F1-score is therefore defined as a harmonic mean of these two statistics:
+
+(4)
+These measurements need to be reported concurrently since a detector can obtain a high recall rate while making numerous false positive reports or vice versa. If the denominator is zero then the method followed for carrying out the evaluation must be mentioned. The project also accounts for the back-row and small person groups of records. For each group the same measures should be computed according to some documented rule of assigning the reference items to that group. As an example it can be said that the evaluation of small people may rely on the area of the box marked by an annotator but the area data must be derived from the evaluation guidelines rather than obtained later to make a finding correct.
+4.4 Tracking and Temporal Readiness]
+Tracking takes frames marked with detections and transforms them to tracks of people in time. Let D represent the total instances of reference persons available, while Dtracked represents the part that could be successfully matched with usable track instances according to the evaluation rules of the project. Tracking coverage can be expressed as
+
+The formulation is considered to be valid only when the tracking-coverage implementation for the project utilizes the eligible reference person instances for the denominator. In case the current implementation uses frames, detections, or track segments instead, Equation (??) has to be modified according to the actual code. Temporal-ready coverage refers to the share of eligible tracks that meet the minimum conditions for temporal reasoning. Let Neligible be the number of eligible tracks and Nready the number of tracks that meet the conditions for temporal readiness, then
+
+(5)
+
+The implementation must define the minimum track duration, the required number of valid feature vectors, and the treatment of missing frames. For TEMPO's configured sequence length of 16, the paper should state whether a track must contain at least 16 valid feature vectors and how incomplete sequences are handled. The reported duplicate-proposal rate can be expressed generally as
+
+100
+
+(6)
+
+4.4 Behaviour-Classification Evaluation
+The behaviour classifier assigns each of the available temporal sequences to one of the five classes. We denote K = 5 as the number of classes. The precision Pk, recall Rk, and F1-score F1,k for class k are computed based on the class-specific true positives, false positives, and false negatives
+
+N
+
+(7)
+
+To measure the overall accuracy of the classification we use the following formula:
+
+9
+
+.
+
+(8)
+
+Macro-averaged F1 refers to the average F1 over all classes without taking into account the support of classes.
+(9)
+
+Macro-F1 can be very useful if class distribution is uneven as this way classes with low frequencies equally influence the average value. The values of the accuracy and macro-F1 should be presented together with the confusion matrix, per-class precision, recall, F1-score, and the support of each class in order to differentiate between the overall correctness and the errors occurring in specific classes
+4.5 Temporal Distribution and Entropy TEMPO is capable of generating a summary of the predicted categories of behaviours over a certain time frame. Here, ni,t represents the number of valid predictions assigned to category i within the time frame t, while Nt refers to the overall number of valid predictions made in that time period. The empirical proportion of category i can be calculated using the following formula.
+(10)
+provided Nt > 0. The concept of Shannon entropy comes into play after that. Using final equation:
+(11) of where i=1 because K=5 for 5 behavioural categories. In this situation, 0 log2 0 = 0 by default. If provided categories are five in number, then the entropy can fall between 0 and log2 5 bits. A zero figure means that one of the provided categories takes the lead in the distribution while a bigger number indicates a much more expansive distribution that does not necessarily signify that ivo was more captivated or more distracted from the subject matter. Measuring entropy can become handy in differentiating different time intervals which can also be accomplished through Jensen­Shannon divergence. Distributions P and Q represent their intermediate distribution like this:
+
+(12) It implies:
+(13)
+
+DKL(P ||M) can be measured via the following formula:
+(14)
+It is essential to note that by applying the base 2 in the logs, you can reach the results that lie between 0 and 1 bits in terms of the 2 distribution
+4.6 Faculty Movement Indicators The institution's model indicates the four different regions where teachers can be present: Didactic lectern, Aisle circulation, Board exposition, and Desk consultation. Tz can be used for the zone duration and Ttotal for the total observation duration. The zone occupancy measures can be represented as follows
+10
+
+(15)
+
+When the four zones are mutually exclusive and cover all the observation intervals,
+
+qz = 1
+
+(16)
+
+The Faculty Mobility Index (FMI) is calculated according to the weighted formula of the chosen duration zones:
+
+(17)
+Where Taisle, Tboard, and Tdesk are the time spent on Aisle Movement, Board Presentation, and Desk Consultation respectively, while the coefficients 0.6 and 0.8 are weights according to the heuristic approach. Therefore, the index is a specifically developed space-time indicator rather than a methodology for assessing education quality. The applicability of the index depends on how accurately zones are assigned, durations measured and weights interpreted.
+Previously defined Active Teaching Delivery Rate (ATDR) refers to periods of chair being idle and phone usage. Let Tidle denote idle time, and Tphone ­ phone usage time. If those two intervals do not overlap, the expression is based on time measure
+
+­
+
+(18)
+
+In case of overlapping intervals it is necessary to consider their joint amount in order to avoid double counting:
+
+­
+
+(19)
+
+where Iidle and Iphone refer to the time frames recognized as idle and mobile phone use, where vertical lines denote the total duration of their combination. The above civilizations are justified only when the numerator and denominator relate to one and the same observation period and are appropriately represented observational periods as well. The terms should be also defined in the paper as to how phone use is identified, how occlusion and ambiguous classification are treated. FMI and ATDR should also not be regarded as direct indicators of the quality of instruction. Rather, they should serve as supportive tools for reflective evaluation, with human interpretation and contextual data.
+4.7 Timetable Parsing and Entity Verification Record precision and recall achieve peak values and the F1-score is calculated as follows:
+(20)
+(21)
+Corresponding F1 score
+11
+
+(22)
+. These metrics require a straightforward set of rules for matching. E.g., in faculty records one might find a requirement to match some canonical faculty identifier, while in schedule-slot records the exact match would include faculty, section, subject, room, day, and the time. A partial match must not automatically be perceived as an exact match. The entity counts of 64 faculty members, 50 sections, 133 subjects, 35 rooms, and 741 schedule slots should be taken as counts pending reconciliation since the interface states that 66 faculty members exist. The source PDF and normalized database records should be compared in order to determine missing, excess, repeated, ambiguous, and mismatched records before stating extraction accuracy. If the exact-record accuracy is in use, it may be defined
+(23)
+
+The definition may be applied if and only if the evaluation records clearly differentiate between exact and partial matches and the reference set was verified manually. 5. Experimental Results
+5.1 Detection and Tracking Performance This project indicates a comparison between a baseline with 640 pixels and an upgraded detection configuration with 1280 pixels which was conducted on the CDED-7 split consisting of 743 frames.
+Table 3: Detection and tracking outcomes of the proposed TEMPO system, including definitions of duplication and coverage, together with the final evaluation scripts used to calculate these metrics.
+
+Metric
+Detection accuracy Detection recall Detection F1 score Back-row F1 score (y < 580) Back-row recall
+
+Baseline (640 pixels)
+0.7066 0.9208 0.7996 0.8008
+
+Improved (1280 pixels)
+0.8370 0.8575 0.8472 0.8616
+
+0.8667
+
+0.8578
+
+Small-person F1 score (A < 15,000) Duplicate proposal rate
+
+0.7845 25.36%
+
+0.7649 9.84%
+
+Count of false positives Coverage for tracking
+
+671 71.65%
+
+293 96.39%
+
+Coverage for temporal readiness Processing duration per frame
+
+84.75% 299.7 ms
+12
+
+87.62% 773.5 ms
+
+Change
++0.1304 -0.0633 +0.0476 +0.0608
+-0.0089
+-0.0196
+-15.52 percentage points, awaiting definition audit
+-378, as stated +24.74 percentage points
++2.87 percentage points Decreased processing time
+
+The respective back-row F1 and tracking coverage values are also increased. This achievement includes that this configuration might be effective when the essential tasks are either retrieving the detections or preserving the tracks.
+
+1
+0.837 0.7066
+
+0.9208 0.8575
+
+0.8472 0.7996
+
+0.5
+
+Score
+
+0 Precision
+
+Recall
+
+Baseline
+
+Improved
+
+(640p)
+
+(1280p)
+
+F1-score
+
+Figure 4: Comparison of detection precision, recall, and F1-score for the baseline and improved detection configurations.
+
+The upgraded method did not improve upon all the metrics and some showed negative trends. While the recall of 0.9208 shrank to 0.8575, the small-person F1 went down from 0.7845 to 0.7649. The time spent on processing also grew from 299.7 milliseconds to 773.5 milliseconds. These factors should be noted in classroom settings because at times students in the further rows are small and prompt processing may be needed. The processing time mentioned here corresponds to about 1.29 frames per second and that is when the process is being carried out sequentially, not accounting for the operations of other components of the system. Hence the suggested processing should indeed be referred to as offline or near-offline unless the end-to-end speed has been calculated when the work has been conducted on a real device. 5.2 Temporal Behaviour-Model Comparison
+
+The project reports the following results for five temporal-model configurations (Table 4).
+
+Configuration
+
+Table 4: Reported test-set behaviour-model ablation.
+
+Accuracy
+
+Macro-F1 scores
+
+Interpretation
+
+ResNet-18 + RNN
+
+54.46%
+
+0.4960
+
+Baseline temporal model
+
+ResNet-18 + GRU
+
+59.15%
+
+0.5027
+
+Highest macro-F1 score
+
+ResNet-18 + BiGRU ResNet-18 + BiGRU + attention ResNet-50 + BiGRU + attention
+
+60.09% 51.64% 63.38%
+
+0.4926 0.3646 0.4353
+
+Accuracy is higher than for GRU but macro-F1 is lower
+The macro-F1 score is lower in this experiment
+The highest accuracy in this series of experiments but lower macro-F1 than ResNet-18 + GRU
+
+13
+
+The analysis suggests that a model exhibiting the best results in macro-F1 does not prove to be the one with the best accuracy. As indicated above, the best performing configuration with respect to the accuracy is ResNet-50 + BiGRU + attention, while the ResNet-18 + GRU configuration shows the best result in macro-F1
+
+. ResNet-50 + BiGRU + attention
+
+0.4353
+
+0.6338
+
+ResNet-18 + BiGRU + attention
+
+0.3646
+
+0.5164
+
+ResNet-18 + BiGRU
+
+0.4926
+
+0.6009
+
+ResNet-18 + GRU
+
+0.5027
+
+0.5915
+
+ResNet-18 + RNN
+
+0.496 0.5446
+
+0
+
+0.2
+
+0.4
+
+0.6
+
+Score (accuracy expressed as a fraction)
+
+Test accuracy Test macro-F1
+
+Figure 5: Test accuracy and macro-F1 comparison across temporal behaviour-classification configurations.
+
+Based on the macro-F1 reported, the GRU configuration might be the one tending to deliver a more balanced outcome at a class level, but the aggregate score alone does not suffice to support its claim of being the best choice for any and every application. The final comparison must consider classwise metrics, confidence intervals or run variability, and a proper testing protocol. It should communicate the exact checkpoint that was used for each of the reported results. 5.1 Validation Confusion Matrix
+The project materials provide a validation confusion matrix for the five-class behaviour classifier. The matrix is included here as a validation diagnostic and must not be presented as the test confusion matrix (Table 5).
+
+Table 5: Validation confusion matrix. Rows represent actual labels, and columns represent predicted labels.
+
+Actual Class / Predicted Class
+Looking_Toward_Instruction Reading Writing Peer_Interaction Looking_Away
+
+Looking Reading Writing Peer In- Looking
+
+Toward
+
+teraction Away
+
+Instruc-
+
+tion
+
+1
+
+14
+
+0
+
+0
+
+0
+
+12
+
+118
+
+10
+
+0
+
+4
+
+0
+
+11
+
+21
+
+0
+
+0
+
+3
+
+0
+
+0
+
+13
+
+0
+
+0
+
+15
+
+0
+
+0
+
+0
+
+Support
+15 144 32 16 15
+
+14
+
+The associated validation metrics are reported in Table 6. Table 6: Validation per-class metrics from the project materials.
+
+Class
+Looking_Toward_Instructio n Reading Writing Peer_Interaction Looking_Away Reported macro average
+
+Precision 0.0625
+0.7468 0.6774 1.0000 0.0000 0.4974
+
+Recall 0.0667
+0.8194 0.6562 0.8125 0.0000 0.4710
+
+F1-Score 0.0645
+0.7815 0.6667 0.8966 0.0000 0.4818
+
+Support 15
+144 32 16 15 222
+
+According to these validation results, performance of the model in various classes is uneven. The reading category has a fairly high recall, while the Looking_Toward_Instruction and Looking_Away categories have rather low recall scores. Looking_Away is absence in predictions altogether, while Looking_Toward_Instruction had one correctly predicted example in total, as displayed on Figure 6.
+
+Figure 6: Confusion matrix of the five-class behaviour classifier on the validation set.
+temporal model could not have received a complete series of shots. It is also important to mention that if there are duplicated boxes assigned by the detector, it means that redundant activity logs were generated. That is why the results demonstrate the importance of the evaluation metric selection. 6.3 Administrative Value of Timetable Integration The timeline element tackles an applicable issue that is different from video inference. A faculty might have access to a comprehensive PDF timeline document, but the manual process of drawing out faculty activities, sections, subjects, classrooms, and periods can be laborious and full of mistakes. Changing this data into structured data will make it possible to search through it, confirm, and link it with classroom recordings. The existing difference in figures illustrates why the ingestion process needs a clear audit of data quality. A database including the expected number of records may contain duplicates, missing records, or incorrect links. At the same time, records with different spellings may refer to one and the same person and a name of one teacher might repeat in various sections, being absolutely lawful. The next place for one to go is the procedure of data reconciliation. The procedure should standardize names, compare unique entities, check problematic records, and identify missing, surplus, and duplicated records.
+15
+
+6.4 Interpretation of Faculty Movement Indicators The Faculty Mobility Index and Active Teaching Delivery Rate are designed to reflect observable movement and activity patterns. Such indicators might help generate ideas for reflective discussions, however, they do not provide an evidence of instruction quality.
+For instance, the lecturer who stays close to the board may be presenting a complex line of reasoning requiring a continuous focus on a joint derivation. The lecturer who walks in the classroom may perform an activity that involves the students' direct engagement. The two different perspectives can be suitable for effective teaching, depending on the aims of instruction. The approach that equates a higher level of teacher movement with better teaching assumes some oversimplification of the variety of teaching practices.
+We should be cautious about drawing conclusions about the teachers being either immobile or using the devices. A lecturer who is inactive may still be performing an effective teaching session, and device-use can be justified in terms of educational purposes. Thus, even though the accessible information can provide observations, they should be validated by a transparent observation protocol. 6.4 Runtime and Practical Deployment
+The detector now has a runtime of over 773.5 milliseconds per frame, and the bigger resolution comes at an enormous computational cost. That is only about 1.29 frames per second on a sequential basis ­ and that is without even taking into account tracking, classification, temporal inference, database, and video processing parts of the system.
+Thus, it is incorrect to claim that everything that has been evaluated can be called a deployment in real-time. Deployment process should be monitored over the whole pipeline on specific hardware and the results of throughput, latency, memory consumption, and processing for various video length and classroom density must be reported.
+In fact, this architecture can fit well into offline processing. The system does not have to do realtime analysis of every frame in order to perform retrospective processing only if this purpose and capabilities are communicated well. 6. Privacy, Ethics, and Data Governance
+6.1 Privacy as a System Requirement The video footage from classrooms contains information related to individuals, their movement, actions, and engagements in an educational institution. Therefore, even if facial recognition was absent, there are still issues with privacy. For example, raw footage could identify some individuals, while movement patterns and mapping would still allow tracking of them. The use of temporary identifiers would lessen the possibility of being tracked for a long time, but its success will depend on how these identifiers and resultant records are established and stored. To conclude, one should consider privacy as a characteristic of the whole data lifecycle. The research team has to specify what the footage was used for, who might have access to it, where it is going to be stored, which ancillary representations will be retained, as well as when the records will be deleted. The paper has to reflect the real institutional approval or exemption rather than relying solely on the fact that the technical part of the project meets the ethical standards. 6.2 Human Oversight and Non-Punitive Interpretation The goal of TEMPO is to facilitate formative investigations instead of automatic evaluations. It is necessary to note that relying solely on a prediction does not give a reason to assert that a student is disengaged, an instructor is incompetent, or a course is a failure. The model forecasts a visible type and may make mistakes in its predictions. Involving human judgment becomes critical when the model's confidence is low, the subject is obstructed, or the predicted type is known to have a low accuracy. Reports should clearly differentiate between the model's predictions and human assessment and allow a reliable reviewer
+16
+
+to contest or amend the data. The system should never be considered as the main source of evidence for grading, disciplinary decisions, attendance enforcement, hiring, and faculty ranking. If the concerned parties find it necessary to use this system for other purposes, a new review of validity, necessity, proportionality, and governance should be conducted. 6.3 Data Access, Retention, and Transparency This project covers the access management granted to faculty and staff. Verification of those access rights is required so that they are confirmed against actual data received and stored. Raw recordings and the individual track history may necessitate a stricter access control regime than the summary data access. Access per-sons should be limited only to those people who require the information for the approved purpose and the access events should be logged whenever possible. Retention policy must provide information on how long raw recordings, annotated videos, crops, embeddings, track IDs, and summary records are stored. In case derived data are stored after the original video is destroyed, such practice must be justified and documented. The research team needs to explain precisely what types of data are predicted, what limitations exist, and how predictions can be corrected. Available documents do not list in detail the ways in which approval, consent, retention, or destruction of all recordings is organized. These aspects should be taken from the available records of the institution before the paper is submitted. 6.4 Governance Requirements
+The finalized implementation and research protocols need to establish permission documentation for all video sources, controlled access to raw, processed, and completed data, procedures for data retention and deletion, and a protocol for human review. Moreover, the model errors should be investigated for possible dependencies on seating position, visibility, camera angle, etc. The CDED7 dataset should be utilized according to the relevant licensing agreement. The manuscript should not suggest any complete anonymity, FERPA/GDPR compliance, or any global compliance without due legal and technical assessments, as one cannot rely on the model architecture and dashboard screenshots only to claim these. 7. Limitations and Future Work
+This study holds many flaws. Firstly, the finding on detection and tracking is summed up from the CDED-7 variables observed by the project team and cannot cover all types of the classroom set-up, camera position, illumination circumstances, and numbers of students. The outcomes obtained from a single dataset cannot be transferred to all the situations of one type.
+Secondly, there is a discrepancy in the performance at the class level in the case of a five-class behaviour mapping. The confusion matrix used for validation indicates problems concerning the categories of Looking_Toward_Instruction and Looking_Away. Therefore, this aspect greatly limits any chance of making any claims about the effectiveness of the model used with regard to attention reports being provided. Future studies should be aimed at balancing the classes, using different means of data modification, designing time segments, and adjusting the model while trying each of the methods on a test set that cannot be modified.
+There is a contradiction in the available validation study, which states that there are 222 sequences covered by the confusion metrics, while the metadata mentions 223 sequences. Therefore, the confusion matrix and metrics per class should also be included in the final evaluation package. It is important to resolve these inconsistencies before the final publication.
+Moreover, there is a problem with the faculty count in the timetable parsing method. The original timetable and the database should be examined closely in order to prove perfect extraction accuracy of the method. In the future, it will be necessary to automate verification of duplicates, missing parameters, ambiguous names, and weakly connected entity relationships.
+Lastly, the validation of the faculty indicators is still incomplete. The heuristic weights of FMI require explanation while the definition of ATDR should be sound with respect to denominators and intervals. Therefore, it is necessary to obtain the ground truth annotations and the measurements of the reliability of the faculty indicators.
+17
+
+To conclude, the present study does not confirm that TEMPO leads to certain improvements in education. Future research should involve studies having clear research goals, accurate and clarified participant information, human-coded reference data and adequate research techniques that allow making the difference between technical performance and educational output.
+The reproducibility package should cover the exact date of the data release together with split manifest, hashes of the pictures, meanings of the labels, the number of classes, evaluation scripts, identifiers of the models at checkpoints, parameters of the preprocessing procedure, random seeds, the specifications of hardware systems and the code used to generate all the tables documented in the research. 8. Conclusions The prototype developed by TEMPO provides the essential relationship between video processing in the classroom and administrative analytics that correlate to the timetable. The structure of the prototype incorporates human detection, tracking at session-level, visual features extraction, classification of behaviour over the time, and timetable structured data processing as parts of one process. The integration of these parts gives a chance to construct the basis for classroom observations and investigate their temporal patterns. As to the data received from the CDED-7 analysis, the changes brought the increase in F1 from 0.7996 to 0.8472, and the percentage of tracking coverage improved to 96.39%. However, the tracking showed lower recall, less F1 when small-person is involved, and lower frame processing speed. According to the analysis regarding the use of behaviour model, the best result for macro-F1 was reported to be 0.5027 with ResNet-18 + GRU combination, but the validation confusion matrix revealed inconsistencies in some classes. Such results suppose that aggregate results may be complemented with class-specific analysis and interpretation. The timetable ingestion figures indicate some advancement toward automated management integration, yet a discrepancy persists between the 64 faculty records noted in the report and a different statistic of 66. Hence, available data do not serve as a basis for the assertion of perfect extraction accuracy in this case. So far, the faculty mobility metrics can be classified as exploratory in nature as long as their definitions and validation steps are not clarified. The main contribution of TEMPO is its integrated workflow and its clear differentiation between technical predictions and educational judgement. It is important to understand the system as a research and formative-support model rather than as a machine, which could give precise results in measuring the level of engagement. Further development of the project depends on reproducibility of the test set assessment and further data extraction, independent verification of the proposed metrics and complete documentation of data governance in an institution: ATDR ­ Active Teaching Delivery Rate BiGRU ­ Bidirectional gated recurrent unit CDED-7 ­ Classroom Distraction Evaluation Dataset FMI ­ Faculty Mobility Index GRU ­ Gated recurrent unit IoU ­ Intersection over union JSD ­ Jensen­Shannon divergence RNN ­ Recurrent neural network TEMPO ­ Temporal Engagement and Motion Profiling YOLO ­ You Only Look Once References
+[Patidar et al.(2024)] Patidar, P.; Ngoon, T.J.; Zimmerman, J.; Ogan, A.; Agarwal, Y. ClassID: Enabling Student Behavior Attribution from Ambient Classroom Sensing Systems. Proc. ACM Interact. Mob. Wearable Ubiquitous Technol. 2024, 8, 55, 1­28. https://doi.org/10.1145/3659586.
+[Sheng et al.(2025)] Sheng, X.; Li, S.; Chan, S. Real-time classroom student behavior detection based on improved YOLOv8s. Sci. Rep. 2025, 15, 14470. https://doi.org/10.1038/s41598-025-99243-x.
+18
+
+[Han et al.(2025)] Han, L.; Ma, X.; Dai, M.; et al. A WAD-YOLOv8-based method for classroom student behavior detection. Sci. Rep. 2025, 15, 9655. https://doi.org/10.1038/s41598-025-87661-w.
+[Li and Chen(2026)] Li, Y.; Chen, Q. A lightweight YOLOv11n-based framework for student behavior de-tection in smart classroom environments. Discov. Appl. Sci. 2026, 8, 86. https://doi.org/10.1007/ s42452-025-08067-x.
+[Zhao et al.(2026a)] Zhao, Y.; Zhou, G.; Zhou, W.; Zhou, Z.; Deng, Y.; He, W. YOLOAPPA for student behavior detection in classrooms using adaptive boundary aggregation and feature enhancement. Sci. Rep. 2026. https://doi.org/10.1038/s41598-026-62538-8.
+[Fang et al.(2026)] Fang, H.; Mu, S.; Chen, X.; Naz, J.; et al. Real-time classroom behavior and drawing pattern analysis using YOLOv11 for multi-class student activity detection. Discov. Comput. 2026, 29, 249. https://doi.org/10.1007/s10791-026-10144-7.
+[Zhao et al.(2026b)] Zhao, W.; He, G.; Fu, L. DBRA-SCSA-YOLO: A multi-attention network for image-based student classroom behavior detection. Sci. Rep. 2026. https://doi.org/10.1038/ s41598-026-70356-1.
+[Wang and Fan(2026)] Wang, Z.; Fan, T. YOLOv11-ASV: Research on Classroom Behavior Recognition Method Based on YOLOv11. Appl. Sci. 2026, 16, 432. https://doi.org/10.3390/app16010432.
+[Qin et al.(2024)] Qin, Y.; Liao, Y.; Wang, Z. Improved YOLOv8 algorithm for classroom student behav-ior detection. In Proceedings of the 2024 IEEE 6th International Conference on Advanced Information Management, Communicates, Electronic and Automation Control, 2024. https://doi.org/10.1109/ IMCEC59810.2024.10575569.
+[Zhu and Yang(2024)] Zhu, W.; Yang, Z. CSB-YOLO: A rapid and efficient real-time algorithm for classroom student behavior detection. J. Real-Time Image Process. 2024, 21, 140. https://doi.org/10.1007/ s11554-024-01515-8.
+[Cao et al.(2025)] Cao, Y.; Cao, Q.; Qian, C. YOLO-AMM: A real-time classroom behavior detection algorithm based on multi-dimensional feature optimization. Sensors 2025, 25, 1142. https://doi.org/10.3390/ s25041142.
+[Zhou et al.(2024)] Zhou, K.; Zheng, G.; Zhai, H.; Lv, X.; Zhang, W. An improved distraction behavior de-tection algorithm based on YOLOv5. Comput. Mater. Contin. 2024, 81. https://doi.org/10.32604/ cmc.2024.056863.
+[Akila et al.(2024)] Akila, D.; Garg, H.; Pal, S.; Jeyalaksshmi, S. Research on recognition of students attention in offline classroom-based on deep learning. Educ. Inf. Technol. 2024, 29, 6865­6893. https://doi.org/ 10.1007/s10639-023-12089-6.
+[Wu et al.(2024)] Wu, D.; Wang, J.; Zou, W.; Zou, S.; Zhou, J.; Gan, J. Classroom teacher action recognition based on spatio-temporal dual-branch feature fusion. Comput. Vis. Image Underst. 2024, 247, 104068. https://doi.org/10.1016/j.cviu.2024.104068.
+[Cai et al.(2025)] Cai, T.; Xiong, Y.; He, C.; Wu, C.; Cai, L. Classroom teacher behavior analysis: The TBU dataset and performance evaluation. Comput. Vis. Image Underst. 2025, 257, 104376. https: //www.sciencedirect.com/science/article/pii/S1077314225000992.
+[Huang et al.(2025a)] Huang, C.; Zhu, J.; Ji, Y.; et al. A multi-modal dataset for teacher behavior analysis in offline classrooms. Sci. Data 2025, 12, 1115. https://doi.org/10.1038/s41597-025-05426-6.
+[Patidar et al.(2024b)] Patidar, P.; Ngoon, T.; Vogety, N.; Behari, N.; Harrison, C.; Zimmerman, J.; Ogan, A.; Agarwal, Y. Edulyze: Learning Analytics for Real-World Classrooms at Scale. J. Learn. Anal. 2024, 11, 297­313. https://doi.org/10.18608/jla.2024.8367.
+[Xiang et al.(2026)] Xiang, Z.; Lin, Q.; Jia, X.; Zheng, S. Privacy-Preserving Region-Level Classroom En-gagement Analytics for Teacher Reflection. In Proceedings of the Impactful and Responsible AI Systems for Education Workshop, Proceedings of Machine Learning Research,
+19
+
+2026; Volume 339, pp. 160­169. https://proceedings.mlr.press/v339/xiang26a.html.
+
+[Huang and Chen(2025b)] Huang, Y.; Chen, R. A method for classroom behavior state recognition and teach-ing quality monitoring. Int. J. Intell. Comput. Cybern. 2025, 18, 382­396. https://doi.org/10.1108/ IJICC-11-2024-0561.
+
+[Kong et al.(2025)] Kong, Y.; Dong, R.; Zhang, H. Classroom behavior analysis and digital teaching quality evaluation based on spatiotemporal graph neural network. Discov. Artif. Intell. 2025, 5, 404. https: //doi.org/10.1007/s44163-025-00623-z.
+
+[Chen et al.(2025)] Chen, S.; Liu, Y.; Zhang, H.; et al. A human location and action recognition method based on improved YOLOv11 model. Discov. Artif. Intell. 2025, 5, 232. https://doi.org/10.1007/ s44163-025-00492-6.
+
+[Zhang et al.(2025)] Zhang, J.; Guo, L.; Wang, X. Student Classroom Behavior Recognition Based on YOLOv8 and Attention Mechanism. Information 2025, 16, 934. https://doi.org/10.3390/info16110934.
+
+[Anonymous(2025a)] Student Behavior Detection in the Classroom Based on Improved YOLOv8. In Proceed-ings of the 2025 8th International Conference on Advanced Algorithms and Control Engineering; IEEE, 2025. https://doi.org/10.1109/ICAACE65325.2025.11019919.
+
+[Anonymous(2025b)] Student behavior detection model based on multilevel residual networks
+
+and hybrid at-tention
+
+mechanisms.
+
+Neurocomputing
+
+2025,
+
+635.
+
+https://doi.org/10.1016/j.neucom.2025.129965.
+
+[CDED-7(2026)] CDED-7, Classroom Distraction Evaluation Dataset, release v1.1.0-
+
+dataset. Zenodo, record 21207208. Available online: https://zenodo.org/records/21207208
+
+20
+
+.
+21
+
+

@@ -1,0 +1,21 @@
+Copy and paste this entire prompt to ChatGPT, Claude, or any AI model.
+
+You are an expert academic research paper writer specializing in computer vision, deep learning, and educational technology. Write a complete, publication-ready research article for this project.
+
+PROJECT TITLE: Video-Based Deep Learning for Assessing Collaborative Learning Quality
+
+TEAM MEMBERS: N Chidananda (99240040212), L Raviteja (99240040273), K Revanth Kumar (99240041012), M Radha Krishna (99240041002), K Hemanth (99240040969)
+
+PROJECT PATH: C:\Users\Chida\OneDrive\Pictures\Documents\Default Project
+
+Read the entire codebase to understand the implementation. Focus on:
+- README.md
+- configs/config.yaml
+- src/models.py, src/feature_extraction.py, src/dataset.py, src/training.py, src/evaluation.py
+- experiments/train_baseline.py, experiments/train_temporal.py
+- results/metrics/all_results.json, baseline_metrics.json, rnn_metrics.json
+- docs/experiment_log.md, limitations.md
+
+Actual results: 60 videos (3 classes), baseline CNN+MobileNetV2 achieved 100% accuracy, RNN achieved 66.67%. LSTM/GRU implemented. Classes mapped to Peer Discussion, Shared Task Activity, Presentation.
+
+Write article with: Title, Authors, Abstract, Introduction, Related Work, Methodology/System Architecture, Implementation, Results and Analysis, Web Interface, Limitations and Future Work, Conclusion, References (IEEE style). Use actual metrics, be factual, include team details exactly as given.

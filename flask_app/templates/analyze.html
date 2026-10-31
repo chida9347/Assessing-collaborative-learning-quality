@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analyze - CollabVision</title>
+    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+</head>
+<body>
+    <div class="bg-grid"></div>
+    <nav class="navbar">
+        <div class="nav-container">
+            <div class="nav-logo">
+                <i class="fas fa-video"></i>
+                <span>CollabVision</span>
+            </div>
+            <div class="nav-links">
+                <a href="/" class="nav-link">Dashboard</a>
+                <a href="/analyze" class="nav-link active">Analyze</a>
+                <a href="/models" class="nav-link">Models</a>
+            </div>
+        </div>
+    </nav>
+
+    <main class="main">
+        <section class="section">
+            <h1 class="page-title"><i class="fas fa-microscope"></i> Video Analysis</h1>
+            <p class="page-subtitle">Upload or select a video to analyze collaborative learning quality</p>
+        </section>
+
+        <section class="section">
+            <div class="analyze-container">
+                <div class="analyze-card">
+                    <h2 class="card-title"><i class="fas fa-cog"></i> Configuration</h2>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Upload Video from Device</label>
+                        <input type="file" id="videoFile" class="form-input" accept="video/*" onchange="uploadVideo()">
+                        <small class="form-help">Supported: mp4, avi, mov, mkv, wmv (max 500MB)</small>
+                        <div id="uploadStatus" class="upload-status" style="display: none; margin-top: 0.5rem; color: var(--accent-cyan); font-size: 0.875rem;"></div>
+                    </div>
+                    
+                    <div style="text-align: center; margin: 1rem 0; color: var(--text-secondary);">OR</div>
+                    
+                    <div class="form-group">
+                        <label class="form-label">Video Path</label>
+                        <input type="text" id="videoPath" class="form-input" placeholder="data/raw/high/view2348.mp4" value="data/raw/high/view2348.mp4">
+                        <small class="form-help">Path relative to project root or absolute path</small>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label">Model</label>
+                        <select id="modelSelect" class="form-select">
+                            <option value="lstm">LSTM (Recommended)</option>
+                            <option value="gru">GRU</option>
+                            <option value="rnn">RNN</option>
+                            <option value="baseline">Baseline (CNN+Average)</option>
+                        </select>
+                    </div>
+                    <button onclick="analyzeVideo()" class="btn-analyze">
+                        <i class="fas fa-play"></i> Run Analysis
+                    </button>
+                </div>
+
+                <div class="result-card" id="resultCard" style="display: none;">
+                    <h2 class="card-title"><i class="fas fa-chart-pie"></i> Results</h2>
+                    <div class="prediction-result">
+                        <div class="pred-label">Predicted Engagement</div>
+                        <div class="pred-value" id="predClass">-</div>
+                    </div>
+                    <div class="probs-section">
+                        <h3 class="probs-title">Class Probabilities</h3>
+                        <div class="probs-list" id="probsList"></div>
+                    </div>
+                    <div class="meta-section">
+                        <h3 class="probs-title">Video Metadata</h3>
+                        <div class="meta-grid" id="metaGrid"></div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="section">
+            <h2 class="section-title"><i class="fas fa-folder-open"></i> Sample Videos</h2>
+            <div class="samples-grid">
+                <div class="sample-card" onclick="selectSample('data/raw/high/view2348.mp4')">
+                    <div class="sample-badge badge-high">PRESENTATION</div>
+                    <div class="sample-name">view2348.mp4</div>
+                </div>
+                <div class="sample-card" onclick="selectSample('data/raw/mid/view1.mp4')">
+                    <div class="sample-badge badge-mid">SHARED TASK</div>
+                    <div class="sample-name">view1.mp4</div>
+                </div>
+                <div class="sample-card" onclick="selectSample('data/raw/low/view1.mp4')">
+                    <div class="sample-badge badge-low">DISCUSSION</div>
+                    <div class="sample-name">view1.mp4</div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="footer">
+        <p>CollabVision Research Framework</p>
+    </footer>
+
+    <script src="{{ url_for('static', filename='js/analyze.js') }}"></script>
+</body>
+</html>

@@ -1,0 +1,36 @@
+numpy>=1.26,<2.0
+pandas>=2.2
+opencv-python>=4.10
+scikit-learn>=1.4
+matplotlib>=3.8
+seaborn>=0.13
+tensorflow>=2.16; platform_system != "Darwin" or platform_machine != "arm64"
+tensorflow-macos>=2.16; platform_system == "Darwin" and platform_machine == "arm64"
+tensorflow-metal>=1.1; platform_system == "Darwin" and platform_machine == "arm64"
+streamlit>=1.38
+pyyaml>=6.0
+tqdm>=4.66
+h5py>=3.11
+joblib>=1.4
+pytest>=8.0
+Pillow>=10.3
+imageio>=2.34
+imageio-ffmpeg>=0.5
+rich>=13.7
+scikit-image>=0.23
+lz4>=4.3
+ typer>=0.12
+click>=8.1
+ftfy>=6.2
+regex>=2024.5
+torch>=2.3; extra == "torch"  # optional, not default
+ torchvision>=0.18; extra == "torch"
+termtables>=0.2
+watchdog>=4.0
+streamlit-option-menu>=0.3
+streamlit-aggrid>=1.0
+altair>=5.3
+pyarrow>=16.1
+rich
+typer
+ 

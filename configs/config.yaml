@@ -1,0 +1,61 @@
+project:
+  title: "Video-Based Deep Learning for Assessing Collaborative Learning Quality"
+  seed: 42
+
+dataset:
+  name: "OUC-CGE"
+  raw_dir: "data/raw"
+  processed_dir: "data/processed"
+  splits_dir: "data/splits"
+  num_classes: 3
+  class_names: ["Peer Discussion", "Shared Task Activity", "Presentation"]  # mapped from dataset categories
+  clip_duration_sec: 10
+  frame_sample_count: 16
+  frame_stride: null  # null = uniform over duration
+  use_official_split: true
+
+video:
+  target_size: [224, 224]
+  color_mode: "rgb"
+  backend: "opencv"
+
+cnn:
+  backbone: "MobileNetV2"
+  weights: "imagenet"
+  include_top: false
+  pooling: "avg"
+  trainable: false
+  feature_dim: 1280
+
+temporal:
+  sequence_length: 16
+  hidden_units_rnn: 64
+  hidden_units_lstm: 128
+  hidden_units_gru: 128
+  dropout: 0.3
+  recurrent_dropout: 0.0
+  bidirectional: false
+
+training:
+  batch_size: 8
+  epochs: 50
+  learning_rate: 1e-3
+  early_stopping_patience: 10
+  reduce_lr_patience: 5
+  use_class_weights: false
+  checkpoint_dir: "models/checkpoints"
+  save_best_only: true
+
+evaluation:
+  metrics: ["accuracy", "macro_precision", "macro_recall", "macro_f1"]
+
+inference:
+  max_frames_for_preview: 32
+
+paths:
+  cnn_baseline_model: "models/cnn/baseline_model.keras"
+  rnn_model: "models/temporal/rnn_model.keras"
+  lstm_model: "models/temporal/lstm_model.keras"
+  gru_model: "models/temporal/gru_model.keras"
+  features_cache: "data/processed/features_cache"
+  splits_manifest: "data/splits/splits.json"
